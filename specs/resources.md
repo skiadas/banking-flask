@@ -25,7 +25,6 @@ Here we discuss the specific resources that we will support, and their respectiv
 So in summary here are all the methods we'll need to implement:
 
 - `GET /user`
-- `POST /user`
 - `GET /user/{username}`
 - `PUT /user/{username}`
 - `POST /user/{username}`
@@ -71,7 +70,7 @@ Returns information for a particular user. It expects a `password` query paramet
 
 ### `PUT /user/{username}`
 
-Used to create a new user. The server response is similar to that for `POST /user`.
+Used to create a new user.
 
 Expected payload:
 ```json

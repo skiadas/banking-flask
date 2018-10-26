@@ -91,15 +91,14 @@ class User(Base):
 # Represents the database and our interaction with it
 class Db:
    def __init__(self):
-      engineName = 'sqlite://'   # Uses in-memory database
+      engineName = 'sqlite:///test.db'   # Uses in-memory database
       self.engine = create_engine(engineName)
-      self.set_metadata()
-
+      self.metadata = Base.metadata
+      self.metadata.bind = self.engine
+      self.metadata.drop_all(bind=self.engine)
+      self.metadata.create_all(bind=self.engine)
       Session = sessionmaker(bind=self.engine)
       self.session = Session()
-
-   def set_metadata(self):
-      self.metadata = Base.metadata.create_all(self.engine)
 
    def commit(self):
       self.session.commit()
