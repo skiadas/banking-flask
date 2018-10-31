@@ -11,7 +11,7 @@ We could take two approaches to this:
 
 We will opt for this second option.
 
-Let's start with the `user` table:
+Let's start with the `users` table:
 
 - `username` should be a variable length character field. It should be not null, and be the primary key.
 - `password` should be a variable length character field. It should be not null.

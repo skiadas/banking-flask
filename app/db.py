@@ -116,6 +116,9 @@ class Db:
                  .filter_by(username=username)\
                  .one_or_none()
 
+   def getUsers(self):
+      return self.session.query(User).all()
+
    def deleteUser(self, user):
       self.session.delete(user)
       self.deleteNullTransactions()
