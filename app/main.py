@@ -1,9 +1,11 @@
 from flask import Flask, request, make_response, json, url_for, abort
 from db import Db   # See db.py
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 db = Db()
 app.debug = True # Comment out when not testing
+app.url_map.strict_slashes = False   # Allows for a trailing slash on routes
 
 @app.errorhandler(500)
 def server_error(e):
@@ -85,16 +87,37 @@ def user_delete(username):
 
 @app.route('/transaction', methods = ['GET'])
 def transaction_list():
-   contents = request.get_json()
-
+   txs = db.getTransactions(request.get_json())
+   txJsons = makeTxJSONs(txs)
+   return make_json_response({ "transactions": txJsons })
 
 @app.route('/transaction', methods = ['POST'])
 def transaction_create():
-   pass
+   contents = request.get_json()
+   (txType, amount, username) = getFields(contents, ["type", "amount", "user"])
+   if txType not in ["Deposit", "Withdrawal", "Transfer"]:
+      abort(400, "Transaction type must be one of Deposit, Withdrawal, Transfer")
+   recipientname = readRecipient(contents, txType)
+   password = getUserPasswordIfNeeded(contents, txType)
+   user = getUserAndCheckPassword(username, password)
+   recipient = getUserAndCheckPassword(recipientname, None)
+   try:
+      tx = db.addTransaction(txType, amount, user, recipient)
+      db.commit()
+      headers = { "Location": url_for('transaction_info', transactionId=tx.txId) }
+      return make_json_response({ 'ok': 'transaction created' }, 201, headers)
+   except InsufficientFunds:
+      abort(400, "Insufficient funds for this transfer")
 
 @app.route('/transaction/<transactionId>', methods = ['GET'])
 def transaction_info(transactionId):
-   pass
+   tx = db.getTransaction(transactionId)
+   if tx is None:
+      abort(404, "Unknown transaction id")
+   headers = {
+      "Expires": datetime.now() + timedelta(years=1)
+   }
+   return make_json_response(tx.toJSON(), headers=headers)
 
 
 ## Helper method for creating JSON responses
@@ -118,11 +141,13 @@ def checkAlphanum(*args):
       if not arg.isalnum():
          abort(400, 'username and password must be alphanumeric')
 
-def getUserAndCheckPassword(username, password):
+def getUserAndCheckPassword(username, password = None):
+   if username is None:
+      return None
    user = db.getUser(username)
    if user is None:
       abort(404, 'unknown username')
-   if user.password != password:
+   if password is not None and user.password != password:
       abort(400, 'incorrect password')
    return user
 
@@ -130,6 +155,32 @@ def checkNameAvailable(username):
    user = db.getUser(username)
    if user is not None:
       abort(403, 'username already exists')
+
+def readRecipient(contents, txType):
+   if txType != "Transfer":
+      return None
+   elif "recipient" not in contents:
+      abort(400, "Transaction 'recipient' must be provided for transfers")
+   else:
+      return contents[recipientname]
+
+def getFields(contents, fields):
+   for field in fields:
+      if field not in contents:
+         abort(400, "Transaction '" + field + "' must be provided.")
+   return tuple( [contents[field] for field in fields] )
+
+def getUserPasswordIfNeeded(contents, txType):
+   if txType == "Transfer" or txType == "Withdrawal":
+      if "password" not in contents:
+         abort(400, "Password required for transfers and withdrawals.")
+      return contents["password"]
+   return None
+
+def makeTxJSONs(txs):
+   txJsons = [tx.toJSON() for tx in txs]
+   for txJson in txJsons:
+      txJson["link"] = url_for("transaction_info", transactionId = txJson["txId"])
 
 # Starts the application
 if __name__ == "__main__":

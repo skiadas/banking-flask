@@ -125,7 +125,7 @@ The return format looks as follows:
 {
     transactions: [
         {
-            "transactionId": "Grfe42greTY6",
+            "txId": "Grfe42greTY6",
             "link": "/transaction/Grfe42greTY6",
             "type": "Deposit",
             "user": "skiadas",
@@ -133,7 +133,7 @@ The return format looks as follows:
             "datetime": "2018-10-04 04:23am"
         },
         {
-            "transactionId": "TgEEF3ER2I6Q",
+            "txId": "TgEEF3ER2I6Q",
             "link": "/transaction/TgEEF3ER2I6Q",
             "type": "Transfer",
             "user": "pete",
@@ -176,7 +176,7 @@ Retrieves information for a specific transaction.
 
 ```json
 {
-    "transactionId": "TgEEF3ER2I6Q",
+    "txId": "TgEEF3ER2I6Q",
     "link": "/transaction/TgEEF3ER2I6Q",
     "type": "Transfer",
     "user": "pete",
